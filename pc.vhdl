@@ -31,7 +31,7 @@ begin
             end if;
         end if;
     end process;
-    
+
     pc_out <= std_logic_vector(pc_reg);
 
 end behav;
