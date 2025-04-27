@@ -1,45 +1,37 @@
--- PROGRAM COUNTER
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
-library IEEE; 
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
-
-entity ProgramCounter is 
-    Port (
-            clk : in std_logic;
-            reset : in std_logic;
-            sel : in std_logic;
-            PC_out: out std_logic_vector(15 downto 0)
+entity pc is
+    port (
+        clk    : in  std_logic;
+        reset  : in  std_logic;
+        skip   : in  std_logic; -- 0 = normal increment by 4, 1 = skip next instruction (increment by 8)
+        pc_out : out std_logic_vector(4 downto 0) -- Assuming 5 bits for address
     );
-end ProgramCounter;
+end pc;
 
-architecture Behavioral of ProgramCounter is 
-    signal PC : unsigned(15 downto 0) := (others <= '0');
-    signal Pc_next : unsigned(15 downto 0);
+architecture behav of pc is
+
+    signal pc_reg : unsigned(4 downto 0) := (others => '0');
+
 begin
-    -- this handles the next PC logic with MUX and adder
-    process( sel, PC)
-    begin 
-        if sel = '0' then 
-            PC_next <= PC + 4;
-        else 
-            PC_next <= PC + 8;
-        end if;
-    end process; 
-    
-   -- pc register with reset
-   process(clk)
-   begin
+
+    process(clk)
+    begin
         if rising_edge(clk) then
             if reset = '1' then
-                PC <= (others => '0');
-            else 
-                PC <= PC_next;
+                pc_reg <= (others => '0');
+            else
+                if skip = '1' then
+                    pc_reg <= pc_reg + 8; -- Skip: jump 2 instructions ahead
+                else
+                    pc_reg <= pc_reg + 4; -- Normal: move to next instruction
+                end if;
             end if;
         end if;
     end process;
     
-    Pc_out <= std_logic_vector(PC);
-end Behavioral;     
+    pc_out <= std_logic_vector(pc_reg);
 
-
+end behav;
