@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
+--use ieee.std_logic_unsigned.all;
+use IEEE.NUMERIC_STD.ALL;
 
 entity main_alu_tb is
 end main_alu_tb;
@@ -83,8 +84,6 @@ begin
             -- Check the output
             assert result_tb = patterns(n).expected_result
             report "Test failed at pattern " & integer'image(n)
-                & ": expected " & to_hstring(patterns(n).expected_result)
-                & ", got " & to_hstring(result_tb)
             severity error;
         end loop;
 

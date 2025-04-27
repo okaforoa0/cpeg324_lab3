@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use IEEE.STD_LOGIC_UNSIGNED.ALL;
+--use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use IEEE.NUMERIC_STD.ALL;
 
 entity main_alu is
     Port ( 
