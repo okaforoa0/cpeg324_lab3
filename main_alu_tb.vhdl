@@ -1,6 +1,5 @@
 library ieee;
 use ieee.std_logic_1164.all;
---use ieee.std_logic_unsigned.all;
 use IEEE.NUMERIC_STD.ALL;
 
 entity main_alu_tb is
@@ -19,11 +18,21 @@ architecture behav of main_alu_tb is
         );
     end component;
 
+    -- Declare the sign extend component
+    component sign_extend4to8
+        port (
+            input_4bit  : in std_logic_vector(3 downto 0);
+            output_8bit : out std_logic_vector(7 downto 0)
+        );
+    end component;
+
     -- Internal signals
     signal A_tb, B_tb : std_logic_vector(15 downto 0);
     signal clk_tb     : std_logic := '0';
     signal control_tb : std_logic_vector(1 downto 0);
     signal result_tb  : std_logic_vector(15 downto 0);
+    signal immediate_4bit : std_logic_vector(3 downto 0);
+    signal extended_imm : std_logic_vector(7 downto 0);
 
 begin
 
@@ -37,13 +46,22 @@ begin
         result => result_tb
     );
 
+    -- Instantiate the sign extender (4 bits to 8 bits)
+    se: sign_extend4to8
+    port map (
+        input_4bit => immediate_4bit,
+        output_8bit => extended_imm
+    );
+
     -- Main process
     process
         -- Define a record for inputs and expected outputs
         type pattern_type is record
-            A       : std_logic_vector(15 downto 0);
-            B       : std_logic_vector(15 downto 0);
-            control : std_logic_vector(1 downto 0);
+            is_immediate : boolean;
+            A_value      : std_logic_vector(15 downto 0);
+            B_value      : std_logic_vector(15 downto 0);
+            imm4         : std_logic_vector(3 downto 0);
+            control      : std_logic_vector(1 downto 0);
             expected_result : std_logic_vector(15 downto 0);
         end record;
 
@@ -51,24 +69,37 @@ begin
         type pattern_array is array (natural range <>) of pattern_type;
 
         constant patterns : pattern_array := (
-            -- ADD test: 3 + 5 = 8
-            (A => x"0003", B => x"0005", control => "00", expected_result => x"0008"),
-            -- SWAP test: 0xABCD -> 0xCDAB
-            (A => x"ABCD", B => x"0000", control => "01", expected_result => x"CDAB"),
-            -- FORWARD test: 0x1234
-            (A => x"1234", B => x"0000", control => "10", expected_result => x"1234"),
-            -- COMPARE test (equal): lower halves equal, output 0x0001
-            (A => x"00AA", B => x"11AA", control => "11", expected_result => x"0001"),
-            -- COMPARE test (not equal): lower halves different, output 0x0000
-            (A => x"00AA", B => x"11BB", control => "11", expected_result => x"0000")
+            -- Load 2 into r2 (immediate 2)
+            (is_immediate => true,  A_value => (others => '0'), B_value => (others => '0'), imm4 => "0010", control => "10", expected_result => x"0002"),
+
+            -- Load -1 into r3 (immediate 1111)
+            (is_immediate => true,  A_value => (others => '0'), B_value => (others => '0'), imm4 => "1111", control => "10", expected_result => x"00FF"),
+
+            -- Add r2 + r3 (0x0002 + 0x00FF = 0x0001)
+            (is_immediate => false, A_value => x"0002", B_value => x"00FF", imm4 => "0000", control => "00", expected_result => x"0001"),
+
+            -- Swap halves of r1
+            (is_immediate => false, A_value => x"0001", B_value => (others => '0'), imm4 => "0000", control => "01", expected_result => x"0100"),
+
+            -- Compare r1 and r2
+            (is_immediate => false, A_value => x"0100", B_value => x"0002", imm4 => "0000", control => "11", expected_result => x"0000")
         );
 
     begin
         -- Loop over patterns
         for n in patterns'range loop
-            -- Apply inputs
-            A_tb <= patterns(n).A;
-            B_tb <= patterns(n).B;
+            if patterns(n).is_immediate then
+                immediate_4bit <= patterns(n).imm4;
+                wait for 1 ns; -- wait for sign extension to happen
+                --A_tb <= (15 downto 8 => (others => '0')) & extended_imm;
+                A_tb <= (others => '0');
+                A_tb(7 downto 0) <= extended_imm;
+                B_tb <= patterns(n).B_value;
+            else
+                A_tb <= patterns(n).A_value;
+                B_tb <= patterns(n).B_value;
+            end if;
+
             control_tb <= patterns(n).control;
 
             -- Simulate a clock rising edge
@@ -76,12 +107,12 @@ begin
             wait for 1 ns;
             clk_tb <= '1';
             wait for 1 ns;
-            clk_tb <= '0'; -- Drop clock after edge
+            clk_tb <= '0';
 
-            -- Wait a moment for outputs to update
             wait for 1 ns;
 
-            -- Check the output
+
+            -- Check output
             assert result_tb = patterns(n).expected_result
             report "Test failed at pattern " & integer'image(n)
             severity error;

@@ -1,39 +1,46 @@
 library ieee;
 use ieee.std_logic_1164.all;
---use IEEE.STD_LOGIC_UNSIGNED.ALL;
-use IEEE.NUMERIC_STD.ALL;
 
 entity main_alu is
     Port ( 
-        A       : in  STD_LOGIC_VECTOR(15 downto 0);
-        B       : in  STD_LOGIC_VECTOR(15 downto 0);
-        clk     : in  STD_LOGIC;
-        control : in  STD_LOGIC_VECTOR(1 downto 0);
-        result  : out STD_LOGIC_VECTOR(15 downto 0)
+        A       : in  std_logic_vector(15 downto 0);
+        B       : in  std_logic_vector(15 downto 0);
+        clk     : in  std_logic;
+        control : in  std_logic_vector(1 downto 0);
+        result  : out std_logic_vector(15 downto 0)
     );
 end main_alu;
 
 architecture Behavioral of main_alu is
 
-    -- internal signal to hold adder result
-    signal adder_result : STD_LOGIC_VECTOR(15 downto 0);
-
-    -- instantiate custom 16-bit adder
-    component adder16bit
-        Port (
-            A   : in  STD_LOGIC_VECTOR(15 downto 0);
-            B   : in  STD_LOGIC_VECTOR(15 downto 0);
-            S   : out STD_LOGIC_VECTOR(15 downto 0)
+    -- Declare the adder8bit component
+    component adder8bit
+        port (
+            A   : in  std_logic_vector(7 downto 0);
+            B   : in  std_logic_vector(7 downto 0);
+            S   : out std_logic_vector(7 downto 0)
         );
     end component;
 
+    -- Internal signals
+    signal sum_upper, sum_lower : std_logic_vector(7 downto 0);
+
 begin
 
-    -- adder instantiation
-    U1: adder16bit port map (
-        A => A,
-        B => B,
-        S => adder_result
+    -- Instantiate adder for lower 8 bits
+    lower_adder: adder8bit
+    port map (
+        A => A(7 downto 0),
+        B => B(7 downto 0),
+        S => sum_lower
+    );
+
+    -- Instantiate adder for upper 8 bits
+    upper_adder: adder8bit
+    port map (
+        A => A(15 downto 8),
+        B => B(15 downto 8),
+        S => sum_upper
     );
 
     -- ALU operations
@@ -41,8 +48,8 @@ begin
     begin
         if rising_edge(clk) then
             case control is
-                when "00" => -- ADD
-                    result <= adder_result;
+                when "00" => -- ADD: separate 8-bit signed additions
+                    result <= sum_upper & sum_lower;
 
                 when "01" => -- SWAP halves of A
                     result <= A(7 downto 0) & A(15 downto 8);
@@ -53,9 +60,9 @@ begin
                 when "11" => -- COMPARE lower halves
                     if (A(7 downto 0) = B(7 downto 0)) then
                         result <= (others => '0');
-                        result(0) <= '1'; -- set bit 0 to 1 if equal
+                        result(0) <= '1'; -- Set bit 0 to 1 if equal
                     else
-                        result <= (others => '0'); -- otherwise all zeros
+                        result <= (others => '0'); -- Otherwise all zeros
                     end if;
 
                 when others =>
