@@ -47,28 +47,35 @@ begin
         end loop;
     end process;
 
-    -- Stimulus process
+    -- stimulus process
     stim_proc: process
     begin
-        -- Reset sequence
+        -- reset sequence
         reset_tb <= '1';
         wait for clk_period;
         reset_tb <= '0';
         wait for clk_period;
 
-        -- Insert two NOPs (no operation)
+        -- insert two NOPs (no operation)
         instr_tb <= "00000000";
         wait for clk_period;
         instr_tb <= "00000000";
         wait for clk_period;
 
         -- Load 2 into r2
-        instr_tb <= "01001010";
+        --instr_tb <= "01001010";
+        instr_tb <= "01100010";
         wait for clk_period;
+
+        --instr_tb <= "00000000";
+        --wait for clk_period;
 
         -- Load -1 into r3
         instr_tb <= "01111111";
         wait for clk_period;
+
+        --instr_tb <= "00000000";
+        --wait for clk_period;
 
         -- Add r2 and r3, store in r1
         instr_tb <= "00101101";
@@ -83,7 +90,8 @@ begin
         wait for clk_period;
 
         -- Load 4 into r1 (only if not skipped)
-        instr_tb <= "01010001";
+        --instr_tb <= "01010001";
+        instr_tb <= "01010100";
         wait for clk_period;
 
         -- Display r1 lower half

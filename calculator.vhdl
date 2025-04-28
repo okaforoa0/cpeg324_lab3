@@ -1,3 +1,4 @@
+--declare headers
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -13,7 +14,7 @@ end calculator;
 
 architecture Behavioral of calculator is
 
-    -- Signals between modules
+    -- signals between modules
     signal alu_result : std_logic_vector(15 downto 0) := (others => '0');
     signal rd1, rd2   : std_logic_vector(15 downto 0) := (others => '0');
     signal write_data : std_logic_vector(15 downto 0) := (others => '0');
@@ -26,13 +27,13 @@ architecture Behavioral of calculator is
     signal pc_value   : std_logic_vector(7 downto 0) := (others => '0');
     signal immediate_extended : std_logic_vector(15 downto 0) := (others => '0');
     signal mux_output : std_logic_vector(15 downto 0) := (others => '0');
-    signal instr_internal : std_logic_vector(7 downto 0);
+    signal instr_internal : std_logic_vector(7 downto 0) := (others => '0');
     --signal instr_for_alu : std_logic_vector(7 downto 0) := (others => '0');
 
 
 
 
-    -- For immediate extension
+    -- for immediate extension
     component sign_extend4to16
         port (
             input_4bit  : in std_logic_vector(3 downto 0);
@@ -40,6 +41,7 @@ architecture Behavioral of calculator is
         );
     end component;
 
+    --controller comp
     component controller
         port (
             op            : in  std_logic_vector(1 downto 0);
@@ -55,6 +57,7 @@ architecture Behavioral of calculator is
         );
     end component;
 
+    --reg comp
     component reg_component
         port (
             Rs : in std_logic_vector(1 downto 0);
@@ -68,6 +71,7 @@ architecture Behavioral of calculator is
         );
     end component;
 
+    -- main alu comp
     component main_alu
         port (
             A       : in std_logic_vector(15 downto 0);
@@ -78,6 +82,7 @@ architecture Behavioral of calculator is
         );
     end component;
 
+    -- pc comp
     component pc
         port (
             clk : in std_logic;
@@ -87,6 +92,7 @@ architecture Behavioral of calculator is
         );
     end component;
 
+    -- print mod comp
     component print_module
         port (
             data_in      : in std_logic_vector(15 downto 0);
@@ -97,6 +103,7 @@ architecture Behavioral of calculator is
 
 begin
 
+    --feed instr_internal sig to instr
     process(clk)
     begin
         if rising_edge(clk) then
@@ -104,24 +111,26 @@ begin
         end if;
     end process;
 
-    --process(clk)
-    --begin
-      --  if rising_edge(clk) then
-        --    instr_for_alu <= instr_internal;
-        --end if;
-    --end process;
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            write_data <= alu_result;
+        end if;
+    end process;
 
-    -- Sign extend immediate 4-bit to 16-bit
+    
+
+    -- sign extend immediate 4-bit to 16-bit
     se_block: sign_extend4to16
         port map (
-            input_4bit => instr(3 downto 0),
+            input_4bit => instr_internal(3 downto 0),
             output_16bit => immediate_extended
         );
 
     -- Fill upper 8 bits with zeros
-    immediate_extended(15 downto 8) <= (others => '0');
+    --immediate_extended(15 downto 8) <= (others => '0');
 
-    -- Controller
+    -- controller
     control_unit: controller
         port map (
             op            => instr_internal(7 downto 6),
@@ -139,9 +148,9 @@ begin
     -- Register File
     reg_file: reg_component
         port map (
-            Rs => instr(5 downto 4),
-            Rt => instr(3 downto 2),
-            Rd => instr(5 downto 4),
+            Rs => instr_internal(5 downto 4),
+            Rt => instr_internal(3 downto 2),
+            Rd => instr_internal(1 downto 0),
             write_data => alu_result,
             write_en => we,
             clk => clk,
@@ -162,7 +171,7 @@ begin
             result => alu_result
         );
 
-    -- PC (Program Counter)
+    -- PC
     program_counter: pc
         port map (
             clk => clk,
@@ -171,7 +180,7 @@ begin
             pc_out => pc_value
         );
 
-    -- Print Module
+    -- print mod
     printer: print_module
         port map (
             data_in => alu_result,

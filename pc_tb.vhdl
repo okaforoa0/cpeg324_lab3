@@ -7,7 +7,7 @@ end pc_tb;
 
 architecture behav of pc_tb is
 
-    -- Declare the component under test
+    -- declare the component under test
     component pc
         port (
             clk    : in  std_logic;
@@ -17,7 +17,7 @@ architecture behav of pc_tb is
         );
     end component;
 
-    -- Signals for connecting
+    -- signals for connecting
     signal clk_tb    : std_logic := '0';
     signal reset_tb  : std_logic := '0';
     signal skip_tb   : std_logic := '0';
@@ -25,7 +25,7 @@ architecture behav of pc_tb is
 
 begin
 
-    -- Instantiate the PC
+    -- instantiate the PC
     uut: pc
     port map (
         clk    => clk_tb,
@@ -34,7 +34,7 @@ begin
         pc_out => pc_out_tb
     );
 
-    -- Clock generation
+    -- clock generation
     clk_process: process
     begin
         while true loop

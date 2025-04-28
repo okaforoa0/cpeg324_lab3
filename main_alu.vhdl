@@ -13,34 +13,26 @@ end main_alu;
 
 architecture Behavioral of main_alu is
 
-    -- Declare the adder8bit component
-    component adder8bit
+    -- Declare the adder16bit component
+    component adder16bit
         port (
-            A   : in  std_logic_vector(7 downto 0);
-            B   : in  std_logic_vector(7 downto 0);
-            S   : out std_logic_vector(7 downto 0)
+            A   : in  std_logic_vector(15 downto 0);
+            B   : in  std_logic_vector(15 downto 0);
+            S   : out std_logic_vector(15 downto 0)
         );
     end component;
 
-    -- Internal signals
-    signal sum_upper, sum_lower : std_logic_vector(7 downto 0);
+    -- Internal signal to hold adder result
+    signal adder_result : std_logic_vector(15 downto 0) := (others => '0');
 
 begin
 
-    -- Instantiate adder for lower 8 bits
-    lower_adder: adder8bit
+    -- Instantiate the 16-bit adder
+    U1: adder16bit
     port map (
-        A => A(7 downto 0),
-        B => B(7 downto 0),
-        S => sum_lower
-    );
-
-    -- Instantiate adder for upper 8 bits
-    upper_adder: adder8bit
-    port map (
-        A => A(15 downto 8),
-        B => B(15 downto 8),
-        S => sum_upper
+        A => A,
+        B => B,
+        S => adder_result
     );
 
     -- ALU operations
@@ -48,8 +40,8 @@ begin
     begin
         if rising_edge(clk) then
             case control is
-                when "00" => -- ADD: separate 8-bit signed additions
-                    result <= sum_upper & sum_lower;
+                when "00" => -- ADD (full 16-bit addition)
+                    result <= adder_result;
 
                 when "01" => -- SWAP halves of A
                     result <= A(7 downto 0) & A(15 downto 8);

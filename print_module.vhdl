@@ -14,7 +14,7 @@ architecture Behavioral of print_module is
 
     signal lower8_signed : signed(7 downto 0);
 
-    -- Helper function to check clean input
+    -- helper function to check clean input
     function is_clean(s : std_logic_vector) return boolean is
     begin
         for i in s'range loop
@@ -28,39 +28,39 @@ architecture Behavioral of print_module is
 begin
 
     process(data_in, print_enable)
-        -- Declare temp variables
+        -- declare temp variables
         variable temp_value : integer;
         variable abs_value  : integer;
         variable d0, d1, d2, d3 : integer range 0 to 9;
     begin
         if print_enable = '1' then
 
-            -- Check input validity
+            -- check input validity
             if is_clean(data_in(7 downto 0)) then
 
-                -- Sign-extend lower 8 bits
+                -- sign-extend lower 8 bits
                 lower8_signed <= signed(data_in(7 downto 0));
 
-                -- Convert to integer
+                -- convert to integer
                 temp_value := to_integer(signed(data_in(7 downto 0)));
 
-                -- Absolute value
+                -- abs value
                 if temp_value < 0 then
                     abs_value := -temp_value;
                 else
                     abs_value := temp_value;
                 end if;
 
-                -- Protect bounds (8-bit values only)
+                -- protect the bounds (8-bit values only)
                 abs_value := abs_value mod 256;
 
-                -- Split into decimal digits
+                -- split into decimal digits
                 d3 := abs_value / 1000;
                 d2 := (abs_value mod 1000) / 100;
                 d1 := (abs_value mod 100) / 10;
                 d0 := abs_value mod 10;
 
-                -- Pack into output
+                -- pack into output
                 digits_out <= 
                 std_logic_vector(to_unsigned(d3, 4)) & 
                 std_logic_vector(to_unsigned(d2, 4)) & 
@@ -70,7 +70,7 @@ begin
 
 
             else
-                digits_out <= (others => '0'); -- Bad input → blank
+                digits_out <= (others => '0'); -- bad input → blank
             end if;
 
         else
